@@ -1,9 +1,10 @@
 [package]
 name = "dualshock3"
 version = "0.1.0"
-authors = ["felix"]
+authors = ["Felix Hennig"]
 edition = "2018"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [dependencies]
+hidapi = { version = "1.2.1", features = ["linux-static-hidraw"], default-features = false }
+log = "0.4"
+stoppable_thread = "0.2.1"
