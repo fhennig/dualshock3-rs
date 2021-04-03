@@ -1,5 +1,5 @@
 mod controller;
-pub use controller::{Controller, ControllerValues, MIN_LEN};
+pub use controller::{Controller, ControllerValues, MIN_LEN, Coordinate, Button};
 use hidapi::HidApi;
 use log::{debug, info};
 use std::{thread, time};
@@ -39,19 +39,19 @@ pub trait ControllerHandler {
     /// Default implementation that calls on_event to process changed/active controller states.
     fn controller_update(&mut self, controller: &Controller) {
         // Active sticks get processed first
-        if self.left_pos().length() > MIN_LEN {
+        if controller.left_pos().length() > MIN_LEN {
             self.on_event(
-                HidEvent::Stick(StickEvt::Left(self.left_pos()))
+                HidEvent::Stick(StickEvt::Left(controller.left_pos()))
             );
         }
-        if self.right_pos().length() > MIN_LEN {
+        if controller.right_pos().length() > MIN_LEN {
             self.on_event(
-                HidEvent::Stick(StickEvt::Right(self.right_pos()))
+                HidEvent::Stick(StickEvt::Right(controller.right_pos()))
             );
         }
 
         // Next come the simple buttons
-        let (mut pressed, mut released) = controller.changed_buttons();
+        let (pressed, released) = controller.changed_buttons();
         for btn in pressed.iter() {
             self.on_event(
                 HidEvent::Button(ButtonEvt::Down(*btn))
@@ -66,14 +66,14 @@ pub trait ControllerHandler {
         // Finally, we process the active trigger axes
         // NOTE: there is already a simple button for each trigger as well...
         // ... and I'm not quite sure if our threshold agrees with the controller-internal one.
-        if self.left_trigger() > MIN_LEN {
+        if controller.left_trigger() > MIN_LEN {
             self.on_event(
-                HidEvent::Trigger(TriggenEvt::Left(self.left_trigger()))
+                HidEvent::Trigger(TriggerEvt::Left(controller.left_trigger()))
             );
         }
-        if self.right_trigger() > MIN_LEN {
+        if controller.right_trigger() > MIN_LEN {
             self.on_event(
-                HidEvent::Trigger(TriggenEvt::Right(self.right_trigger()))
+                HidEvent::Trigger(TriggerEvt::Right(controller.right_trigger()))
             );
         }
     }

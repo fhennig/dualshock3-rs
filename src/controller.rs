@@ -1,4 +1,4 @@
-use log::{debug, trace};
+use log::{debug};
 
 
 pub const MIN_LEN: f64 = 0.1;  // TODO crate-visible only?
@@ -197,16 +197,16 @@ impl Controller {
                 rel.push(*btn);
             }
         }
-        pre.shrink_to_size();
-        rel.shrink_to_size();
+        pre.shrink_to_fit();
+        rel.shrink_to_fit();
         return (pre, rel);
     }
 
-    pub fn has_changed(&self) -> bool {
-        //DEBUG rm trace below once satisfied
-        trace!("controller action registered");
-        self.prev_vals == self.curr_vals
-    }
+    // pub fn has_changed(&self) -> bool {
+    //     //DEBUG rm trace below once satisfied
+    //     trace!("controller action registered");
+    //     self.prev_vals == self.curr_vals
+    // }
 
     pub fn left_pos(&self) -> Coordinate {
         let l_x = self.curr_vals.get_axis_val(Axis::LX);
