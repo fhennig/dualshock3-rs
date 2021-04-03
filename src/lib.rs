@@ -5,10 +5,32 @@ use log::{debug, info};
 use std::{thread, time};
 use stoppable_thread::{spawn, StoppableHandle};
 
+
+// #[derive(Debug, Copy, Clone)]
+pub enum StickEvt {
+    Left(Coordinate),
+    Right(Coordinate),
+}
+
+pub enum ButtonEvt {
+    Down(Button),
+    Up(Button),
+}
+
+// #[derive(Debug, Copy, Clone)]
+pub enum HidEvent {
+    Button(ButtonEvt),
+    Stick(StickEvt),
+}
+
 /// A trait that takes controller values and updates a state, sends
 /// them over a network or does whatever with them.
 pub trait ControllerHandler {
-    fn controller_update(&mut self, controller: &Controller);
+    fn on_event(&mut self, e: HidEvent);
+
+    fn controller_update(&mut self, controller: &Controller) {
+        // something with `if event on_event(event)
+    }
 }
 
 /// Takes a sink where controller updates will be put.  Controller
