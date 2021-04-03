@@ -1,4 +1,7 @@
-use log::debug;
+use log::{debug, trace};
+
+
+pub const MIN_LEN: f64 = 0.1;  // TODO crate-visible only?
 
 #[derive(Copy, Clone)]
 pub struct Coordinate(pub f64, pub f64);
@@ -43,10 +46,10 @@ pub enum Button {
     Right,
     L1,
     L2,
-    L3,
+    L3,  // left stick button
     R1,
     R2,
-    R3,
+    R3,  // right stick button
     Triangle,
     Circle,
     Cross,
@@ -81,10 +84,10 @@ impl Button {
 pub enum Axis {
     LX,
     LY,
-    L3,
+    L3,  // left trigger axis
     RX,
     RY,
-    R3,
+    R3,  // right trigger axis
 }
 
 impl Axis {
@@ -163,6 +166,48 @@ impl Controller {
         self.curr_vals = new_vals;
     }
 
+    pub fn changed_buttons(&self) -> (Vec<Button>, Vec<Button>) {
+        let mut pre = Vec::with_capacity(17);
+        let mut rel = Vec::with_capacity(17);
+        for btn in [
+            Button::PS,
+            Button::Start,
+            Button::Select,
+            Button::Up,
+            Button::Down,
+            Button::Left,
+            Button::Right,
+            Button::L1,
+            Button::L2,
+            Button::L3,
+            Button::R1,
+            Button::R2,
+            Button::R3,
+            Button::Triangle,
+            Button::Circle,
+            Button::Cross,
+            Button::Square,
+        ]
+        .iter()
+        {
+            if self.was_pressed(*btn) {
+                pre.push(*btn);
+            }
+            else if self.was_released(*btn) {
+                rel.push(*btn);
+            }
+        }
+        pre.shrink_to_size();
+        rel.shrink_to_size();
+        return (pre, rel);
+    }
+
+    pub fn has_changed(&self) -> bool {
+        //DEBUG rm trace below once satisfied
+        trace!("controller action registered");
+        self.prev_vals == self.curr_vals
+    }
+
     pub fn left_pos(&self) -> Coordinate {
         let l_x = self.curr_vals.get_axis_val(Axis::LX);
         let l_y = self.curr_vals.get_axis_val(Axis::LY);
@@ -211,10 +256,10 @@ impl Controller {
     /// Indicates whether there is currently any kind of user input.
     /// A pressed button, or a moved joystick.
     pub fn has_any_input(&self) -> bool {
-        if self.left_pos().length() > 0.1 || self.right_pos().length() > 0.1 {
+        if self.left_pos().length() > MIN_LEN || self.right_pos().length() > MIN_LEN {
             return true;
         }
-        if self.left_trigger() > 0.1 || self.right_trigger() > 0.1 {
+        if self.left_trigger() > MIN_LEN || self.right_trigger() > MIN_LEN {
             return true;
         }
         for btn in [

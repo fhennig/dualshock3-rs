@@ -1,5 +1,5 @@
 mod controller;
-pub use controller::{Controller, ControllerValues};
+pub use controller::{Controller, ControllerValues, MIN_LEN};
 use hidapi::HidApi;
 use log::{debug, info};
 use std::{thread, time};
@@ -17,19 +17,65 @@ pub enum ButtonEvt {
     Up(Button),
 }
 
+pub enum TriggerEvt {
+    Left(f64),
+    Right(f64),
+}
+
 // #[derive(Debug, Copy, Clone)]
 pub enum HidEvent {
     Button(ButtonEvt),
     Stick(StickEvt),
+    Trigger(TriggerEvt),
 }
 
 /// A trait that takes controller values and updates a state, sends
 /// them over a network or does whatever with them.
 pub trait ControllerHandler {
+    /// Takes a HidEvent to process. This can be a void implementation if you override
+    /// controller_update instead (e.g. you want direct control over the raw controller state).
     fn on_event(&mut self, e: HidEvent);
 
+    /// Default implementation that calls on_event to process changed/active controller states.
     fn controller_update(&mut self, controller: &Controller) {
-        // something with `if event on_event(event)
+        // Active sticks get processed first
+        if self.left_pos().length() > MIN_LEN {
+            self.on_event(
+                HidEvent::Stick(StickEvt::Left(self.left_pos()))
+            );
+        }
+        if self.right_pos().length() > MIN_LEN {
+            self.on_event(
+                HidEvent::Stick(StickEvt::Right(self.right_pos()))
+            );
+        }
+
+        // Next come the simple buttons
+        let (mut pressed, mut released) = controller.changed_buttons();
+        for btn in pressed.iter() {
+            self.on_event(
+                HidEvent::Button(ButtonEvt::Down(*btn))
+            );
+        }
+        for btn in released.iter() {
+            self.on_event(
+                HidEvent::Button(ButtonEvt::Up(*btn))
+            );
+        }
+
+        // Finally, we process the active trigger axes
+        // NOTE: there is already a simple button for each trigger as well...
+        // ... and I'm not quite sure if our threshold agrees with the controller-internal one.
+        if self.left_trigger() > MIN_LEN {
+            self.on_event(
+                HidEvent::Trigger(TriggenEvt::Left(self.left_trigger()))
+            );
+        }
+        if self.right_trigger() > MIN_LEN {
+            self.on_event(
+                HidEvent::Trigger(TriggenEvt::Right(self.right_trigger()))
+            );
+        }
     }
 }
 
