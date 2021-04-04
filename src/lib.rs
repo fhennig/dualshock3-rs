@@ -1,5 +1,5 @@
 mod controller;
-pub use controller::{Controller, ControllerValues, MIN_LEN, Coordinate, Button};
+pub use controller::{Controller, ControllerValues, Coordinate, Button};
 use hidapi::HidApi;
 use log::{debug, info};
 use std::{thread, time};
@@ -39,12 +39,12 @@ pub trait ControllerHandler {
     /// Default implementation that calls on_event to process changed/active controller states.
     fn controller_update(&mut self, controller: &Controller) {
         // Active sticks get processed first
-        if controller.left_pos().length() > MIN_LEN {
+        if controller.left_pos_changed() {
             self.on_event(
                 HidEvent::Stick(StickEvt::Left(controller.left_pos()))
             );
         }
-        if controller.right_pos().length() > MIN_LEN {
+        if controller.right_pos_changed() {
             self.on_event(
                 HidEvent::Stick(StickEvt::Right(controller.right_pos()))
             );
@@ -66,12 +66,12 @@ pub trait ControllerHandler {
         // Finally, we process the active trigger axes
         // NOTE: there is already a simple button for each trigger as well...
         // ... and I'm not quite sure if our threshold agrees with the controller-internal one.
-        if controller.left_trigger() > MIN_LEN {
+        if controller.left_trigger_changed() {
             self.on_event(
                 HidEvent::Trigger(TriggerEvt::Left(controller.left_trigger()))
             );
         }
-        if controller.right_trigger() > MIN_LEN {
+        if controller.right_trigger_changed() {
             self.on_event(
                 HidEvent::Trigger(TriggerEvt::Right(controller.right_trigger()))
             );
