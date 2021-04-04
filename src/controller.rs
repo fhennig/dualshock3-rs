@@ -166,6 +166,8 @@ impl Controller {
         self.curr_vals = new_vals;
     }
 
+    /// Returns two vectors, the first with buttons that were pressed, 
+    /// the second with buttons that were released.
     pub fn changed_buttons(&self) -> (Vec<Button>, Vec<Button>) {
         let mut pre = Vec::with_capacity(17);
         let mut rel = Vec::with_capacity(17);
@@ -208,12 +210,22 @@ impl Controller {
     //     self.prev_vals == self.curr_vals
     // }
 
+    pub fn left_pos_changed(&self) -> bool {
+        !(self.prev_vals.get_axis_val(Axis::LX) == self.curr_vals.get_axis_val(Axis::LX) &&
+        self.prev_vals.get_axis_val(Axis::LY) == self.curr_vals.get_axis_val(Axis::LY))
+    }
+
     pub fn left_pos(&self) -> Coordinate {
         let l_x = self.curr_vals.get_axis_val(Axis::LX);
         let l_y = self.curr_vals.get_axis_val(Axis::LY);
         let l_x = ((l_x as f64) / 255.0 - 0.5) * 2.0;
         let l_y = ((l_y as f64 / 255.0 - 0.5) * -1.0) * 2.0;
         Coordinate(l_x, l_y)
+    }
+
+    pub fn right_pos_changed(&self) -> bool {
+        !(self.prev_vals.get_axis_val(Axis::RX) == self.curr_vals.get_axis_val(Axis::RX) &&
+        self.prev_vals.get_axis_val(Axis::RY) == self.curr_vals.get_axis_val(Axis::RY))
     }
 
     pub fn right_pos(&self) -> Coordinate {
@@ -224,10 +236,18 @@ impl Controller {
         Coordinate(r_x, r_y)
     }
 
+    pub fn left_trigger_changed(&self) -> bool {
+        !(self.prev_vals.get_axis_val(Axis::L3) == self.curr_vals.get_axis_val(Axis::L3))
+    }
+
     /// Returns a value in [0, 1]
     pub fn left_trigger(&self) -> f64 {
         let t = self.curr_vals.get_axis_val(Axis::L3);
         (t as f64) / 255.0
+    }
+
+    pub fn right_trigger_changed(&self) -> bool {
+        !(self.prev_vals.get_axis_val(Axis::R3) == self.curr_vals.get_axis_val(Axis::R3))
     }
 
     /// Returns a value in [0, 1]
@@ -246,7 +266,6 @@ impl Controller {
         self.curr_vals.is_pressed(btn)
     }
 
-    #[allow(dead_code)]
     pub fn was_released(&self, btn: Button) -> bool {
         let prev = self.prev_vals.is_pressed(btn);
         let curr = self.curr_vals.is_pressed(btn);
