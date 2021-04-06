@@ -11,41 +11,27 @@ pub enum LR {
     Right,
 }
 
-// #[derive(Debug, Copy, Clone)]
-pub enum StickEvt {
-    Moved(Coordinate),
-    Active(Coordinate),
-    ToOrigin,
-}
-
 pub enum ButtonEvt {
     Down,
-    Pressed,
     Up,
 }
 
-pub enum TriggerEvt {
-    Moved(f64),
-    Active(f64),
-    ToOrigin,
-}
 
 // #[derive(Debug, Copy, Clone)]
 pub enum HidEvent {
     Button(Button, ButtonEvt),
-    Stick(LR, StickEvt),
-    Trigger(LR, TriggerEvt),
+    Stick(LR, Coordinate),
+    Trigger(LR, f64),
 }
 
 /// A trait that takes controller values and updates a state, sends
 /// them over a network or does whatever with them.
 pub trait ControllerHandler {
-    //TODO: I'm not sure if a function is the best place to effectively store a value in a trait?
     /// Defines the minimal length for stick events to be sent.
-    // fn min_len_stick(&self) -> f64;
+    fn min_len_stick(&self) -> f64 { 0. }
 
     /// Defines the minimal length for trigger events to be sent.
-    // fn min_len_trigger(&self) -> f64;
+    fn min_len_trigger(&self) -> f64 { 0. }
 
     //TODO: should this take a Vec<HidEvent> instead, to allow for checking for multiple simultaneous button presses?
     /// Takes a HidEvent to process. This can be a void implementation if you override
@@ -53,40 +39,36 @@ pub trait ControllerHandler {
     fn on_event(&mut self, e: HidEvent);
 
     /// Default implementation that calls on_event to process changed/active controller states.
-    fn controller_update(&mut self, controller: &Controller, l_stk: f64, l_tgr: f64) {
-        // let l_stk = self.min_len_stick();
-        // let l_tgr = self.min_len_trigger();
+    fn controller_update(&mut self, controller: &Controller) {
+        let l_stk = self.min_len_stick();
+        let l_tgr = self.min_len_trigger();
 
         // Active sticks get processed first
-        if controller.left_pos().length() > l_stk {
-            if controller.left_pos_changed() {
+        if controller.left_pos_changed() {
+            if l_stk == 0. || controller.left_pos().length() > l_stk {
                 self.on_event(
-                    HidEvent::Stick(LR::Left, StickEvt::Moved(controller.left_pos()))
+                    HidEvent::Stick(LR::Left, controller.left_pos())
                 );
-            } else {
+            } else if controller.prev_left_pos().length() > l_stk {
                 self.on_event(
-                    HidEvent::Stick(LR::Left, StickEvt::Active(controller.left_pos()))
+                    HidEvent::Stick(LR::Left, Coordinate::zero())
                 );
             }
-        } else if controller.left_pos_changed() {
-            self.on_event(HidEvent::Stick(LR::Left, StickEvt::ToOrigin));
         }
-        if controller.right_pos().length() > l_stk {
-            if controller.right_pos_changed() {
+        if controller.right_pos_changed() {
+            if l_stk == 0. || controller.right_pos().length() > l_stk {
                 self.on_event(
-                    HidEvent::Stick(LR::Right, StickEvt::Moved(controller.right_pos()))
+                    HidEvent::Stick(LR::Right, controller.right_pos())
                 );
-            } else {
+            } else if controller.prev_right_pos().length() > l_stk {
                 self.on_event(
-                    HidEvent::Stick(LR::Right, StickEvt::Active(controller.right_pos()))
-                );
+                    HidEvent::Stick(LR::Right, Coordinate::zero())
+            );
             }
-        } else if controller.right_pos_changed() {
-            self.on_event(HidEvent::Stick(LR::Right, StickEvt::ToOrigin));
         }
 
         // Next come the simple buttons
-        let (pressed, active, released) = controller.changed_buttons();
+        let (pressed, released) = controller.changed_buttons();
         for btn in pressed.iter() {  //TODO bad naming
             self.on_event(
                 HidEvent::Button(*btn, ButtonEvt::Down)
@@ -97,44 +79,31 @@ pub trait ControllerHandler {
                 HidEvent::Button(*btn, ButtonEvt::Up)
             );
         }
-        for btn in active.iter() {
-            self.on_event(
-                HidEvent::Button(*btn, ButtonEvt::Pressed)
-            );
-        }
 
         // Finally, we process the active trigger axes
         // NOTE: there is already a simple button for each trigger as well...
         // ... and I'm not quite sure if our threshold agrees with the controller-internal one.
-        if controller.left_trigger() > l_tgr {
-            if controller.left_trigger_changed() {
+        if controller.left_trigger_changed() {
+            if l_tgr == 0. || controller.left_trigger() > l_tgr {
                 self.on_event(
-                    HidEvent::Trigger(LR::Left, TriggerEvt::Moved(controller.left_trigger()))
+                    HidEvent::Trigger(LR::Left, controller.left_trigger())
                 );
-            } else {
+            } else if controller.prev_left_trigger() > l_tgr {
                 self.on_event(
-                    HidEvent::Trigger(LR::Left, TriggerEvt::Active(controller.left_trigger()))
+                    HidEvent::Trigger(LR::Left, 0.)
                 );
             }
-        } else if controller.left_trigger_changed() {
-            self.on_event(
-                HidEvent::Trigger(LR::Left, TriggerEvt::ToOrigin)
-            );
         }
-        if controller.right_trigger() > l_tgr {
-            if controller.right_trigger_changed() {
+        if controller.right_trigger_changed() {
+            if l_tgr == 0. || controller.right_trigger() > l_tgr {
                 self.on_event(
-                    HidEvent::Trigger(LR::Right, TriggerEvt::Moved(controller.right_trigger()))
+                    HidEvent::Trigger(LR::Right, controller.right_trigger())
                 );
-            } else {
+            } else if controller.prev_right_trigger() > l_tgr {
                 self.on_event(
-                    HidEvent::Trigger(LR::Right, TriggerEvt::Active(controller.right_trigger()))
+                    HidEvent::Trigger(LR::Right, 0.)
                 );
             }
-        } else if controller.right_trigger_changed() {
-            self.on_event(
-                HidEvent::Trigger(LR::Right, TriggerEvt::ToOrigin)
-            );
         }
     }
 }
@@ -145,8 +114,7 @@ pub trait ControllerHandler {
 /// if the controller is disconnected.
 #[allow(unused_must_use)]
 pub fn read_controller(
-    mut controller_handler: Box<dyn ControllerHandler + Send + Sync>,
-    l_stk: f64, l_tgr: f64,
+    mut controller_handler: Box<dyn ControllerHandler + Send + Sync>
 ) -> StoppableHandle<()> {
     spawn(move |stopped| {
         // TODO make a big retry loop, where we retry to open the device.
@@ -186,7 +154,7 @@ pub fn read_controller(
                         debug!("Read: {:?}", buf);
                         let vals = ControllerValues::new(buf);
                         controller.update(vals);
-                        controller_handler.controller_update(&controller, l_stk, l_tgr);
+                        controller_handler.controller_update(&controller);
                     }
                     Err(_e) => {
                         info!("Error reading controller values.");

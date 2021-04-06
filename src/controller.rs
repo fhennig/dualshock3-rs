@@ -33,6 +33,10 @@ impl Coordinate {
     pub fn length(&self) -> f64 {
         (self.0.powi(2) + self.1.powi(2)).sqrt()
     }
+
+    pub fn zero() -> Coordinate {
+        Coordinate(0., 0.)
+    }
 }
 
 #[derive(Debug, Copy, Clone)]
@@ -168,10 +172,9 @@ impl Controller {
 
     /// Returns two vectors, the first with buttons that were pressed,
     /// the second with buttons that were released.
-    pub fn changed_buttons(&self) -> (Vec<Button>, Vec<Button>, Vec<Button>) {
+    pub fn changed_buttons(&self) -> (Vec<Button>, Vec<Button>) {
         let mut pre = Vec::with_capacity(17);
         let mut rel = Vec::with_capacity(17);
-        let mut act = Vec::with_capacity(17);
         for btn in [
             Button::PS,
             Button::Start,
@@ -199,13 +202,10 @@ impl Controller {
             else if self.was_released(*btn) {
                 rel.push(*btn);
             }
-            else if self.is_pressed(*btn) {
-                act.push(*btn);
-            }
         }
         pre.shrink_to_fit();
         rel.shrink_to_fit();
-        return (pre, act, rel);
+        return (pre, rel);
     }
 
     // pub fn has_changed(&self) -> bool {
@@ -227,6 +227,14 @@ impl Controller {
         Coordinate(l_x, l_y)
     }
 
+    pub fn prev_left_pos(&self) -> Coordinate {
+        let l_x = self.prev_vals.get_axis_val(Axis::LX);
+        let l_y = self.prev_vals.get_axis_val(Axis::LY);
+        let l_x = ((l_x as f64) / 255.0 - 0.5) * 2.0;
+        let l_y = ((l_y as f64 / 255.0 - 0.5) * -1.0) * 2.0;
+        Coordinate(l_x, l_y)
+    }
+
     pub fn right_pos_changed(&self) -> bool {
         !(self.prev_vals.get_axis_val(Axis::RX) == self.curr_vals.get_axis_val(Axis::RX) &&
         self.prev_vals.get_axis_val(Axis::RY) == self.curr_vals.get_axis_val(Axis::RY))
@@ -235,6 +243,14 @@ impl Controller {
     pub fn right_pos(&self) -> Coordinate {
         let r_x = self.curr_vals.get_axis_val(Axis::RX);
         let r_y = self.curr_vals.get_axis_val(Axis::RY);
+        let r_x = ((r_x as f64) / 255.0 - 0.5) * 2.0;
+        let r_y = ((r_y as f64 / 255.0 - 0.5) * -1.0) * 2.0;
+        Coordinate(r_x, r_y)
+    }
+
+    pub fn prev_right_pos(&self) -> Coordinate {
+        let r_x = self.prev_vals.get_axis_val(Axis::RX);
+        let r_y = self.prev_vals.get_axis_val(Axis::RY);
         let r_x = ((r_x as f64) / 255.0 - 0.5) * 2.0;
         let r_y = ((r_y as f64 / 255.0 - 0.5) * -1.0) * 2.0;
         Coordinate(r_x, r_y)
@@ -250,6 +266,11 @@ impl Controller {
         (t as f64) / 255.0
     }
 
+    pub fn prev_left_trigger(&self) -> f64 {
+        let t = self.prev_vals.get_axis_val(Axis::L3);
+        (t as f64) / 255.0
+    }
+
     pub fn right_trigger_changed(&self) -> bool {
         !(self.prev_vals.get_axis_val(Axis::R3) == self.curr_vals.get_axis_val(Axis::R3))
     }
@@ -257,6 +278,11 @@ impl Controller {
     /// Returns a value in [0, 1]
     pub fn right_trigger(&self) -> f64 {
         let t = self.curr_vals.get_axis_val(Axis::R3);
+        (t as f64) / 255.0
+    }
+
+    pub fn prev_right_trigger(&self) -> f64 {
+        let t = self.prev_vals.get_axis_val(Axis::R3);
         (t as f64) / 255.0
     }
 
