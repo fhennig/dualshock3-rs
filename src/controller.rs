@@ -166,11 +166,12 @@ impl Controller {
         self.curr_vals = new_vals;
     }
 
-    /// Returns two vectors, the first with buttons that were pressed, 
+    /// Returns two vectors, the first with buttons that were pressed,
     /// the second with buttons that were released.
-    pub fn changed_buttons(&self) -> (Vec<Button>, Vec<Button>) {
+    pub fn changed_buttons(&self) -> (Vec<Button>, Vec<Button>, Vec<Button>) {
         let mut pre = Vec::with_capacity(17);
         let mut rel = Vec::with_capacity(17);
+        let mut act = Vec::with_capacity(17);
         for btn in [
             Button::PS,
             Button::Start,
@@ -198,10 +199,13 @@ impl Controller {
             else if self.was_released(*btn) {
                 rel.push(*btn);
             }
+            else if self.is_pressed(*btn) {
+                act.push(*btn);
+            }
         }
         pre.shrink_to_fit();
         rel.shrink_to_fit();
-        return (pre, rel);
+        return (pre, act, rel);
     }
 
     // pub fn has_changed(&self) -> bool {
