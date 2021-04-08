@@ -159,7 +159,7 @@ pub fn read_controller(
                 // Read data from device
                 match device.read_timeout(&mut buf[..], -1) {
                     Ok(_) => {
-                        debug!("Read: {:?}", buf);
+                        trace!("Read: {:?}", buf);
                         let vals = ControllerValues::new(buf);
                         controller.update(vals);
                         controller_handler.controller_update(&controller);
