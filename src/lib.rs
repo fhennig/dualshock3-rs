@@ -1,7 +1,7 @@
 mod controller;
 pub use controller::{Controller, ControllerValues, Coordinate, Button, Axis};
 use hidapi::HidApi;
-use log::{debug, info};
+use log::{debug, info, trace};
 use core::f64;
 use std::{thread, time};
 use stoppable_thread::{spawn, StoppableHandle};
@@ -124,6 +124,7 @@ pub fn read_controller(
 
             let (vid, pid) = (1356, 616);
             let mut api = HidApi::new().unwrap();
+            trace!("Unwrapped HID API.");
             let mut found = false;
             while !found {
                 api.refresh_devices();
