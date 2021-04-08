@@ -123,7 +123,7 @@ pub fn read_controller(
             info!("Trying to connect to a controller ...");
 
             let (vid, pid) = (1356, 616);
-            let mut api = HidApi::new().unwrap("Failed to get HID API.");
+            let mut api = HidApi::new().expect("Failed to get HID API.");
             trace!("Unwrapped HID API.");
             let mut found = false;
             while !found {
