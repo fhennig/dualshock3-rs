@@ -1,4 +1,5 @@
 use log::{debug};
+use core::slice::Iter;
 
 
 pub const MIN_LEN: f64 = 0.1;  // TODO crate-visible only?
@@ -81,6 +82,48 @@ impl Button {
             Button::Cross => (3, 6),
             Button::Square => (3, 7),
         }
+    }
+
+    fn iterator() -> Iter<'static, Button> {
+        // static BUTTONS: [Button; 17] = [
+        //     Button::PS,
+        //     Button::Start,
+        //     Button::Select,
+        //     Button::Up,
+        //     Button::Down,
+        //     Button::Left,
+        //     Button::Right,
+        //     Button::L1,
+        //     Button::L2,
+        //     Button::L3,
+        //     Button::R1,
+        //     Button::R2,
+        //     Button::R3,
+        //     Button::Triangle,
+        //     Button::Circle,
+        //     Button::Cross,
+        //     Button::Square,
+        // ];
+        // BUTTONS.iter()
+        [
+            Button::PS,
+            Button::Start,
+            Button::Select,
+            Button::Up,
+            Button::Down,
+            Button::Left,
+            Button::Right,
+            Button::L1,
+            Button::L2,
+            Button::L3,
+            Button::R1,
+            Button::R2,
+            Button::R3,
+            Button::Triangle,
+            Button::Circle,
+            Button::Cross,
+            Button::Square,
+        ].iter()
     }
 }
 
@@ -175,27 +218,7 @@ impl Controller {
     pub fn changed_buttons(&self) -> (Vec<Button>, Vec<Button>) {
         let mut pre = Vec::with_capacity(17);
         let mut rel = Vec::with_capacity(17);
-        for btn in [
-            Button::PS,
-            Button::Start,
-            Button::Select,
-            Button::Up,
-            Button::Down,
-            Button::Left,
-            Button::Right,
-            Button::L1,
-            Button::L2,
-            Button::L3,
-            Button::R1,
-            Button::R2,
-            Button::R3,
-            Button::Triangle,
-            Button::Circle,
-            Button::Cross,
-            Button::Square,
-        ]
-        .iter()
-        {
+        for btn in Button::iterator() {
             if self.was_pressed(*btn) {
                 pre.push(*btn);
             }
@@ -311,27 +334,7 @@ impl Controller {
         if self.left_trigger() > MIN_LEN || self.right_trigger() > MIN_LEN {
             return true;
         }
-        for btn in [
-            Button::PS,
-            Button::Start,
-            Button::Select,
-            Button::Up,
-            Button::Down,
-            Button::Left,
-            Button::Right,
-            Button::L1,
-            Button::L2,
-            Button::L3,
-            Button::R1,
-            Button::R2,
-            Button::R3,
-            Button::Triangle,
-            Button::Circle,
-            Button::Cross,
-            Button::Square,
-        ]
-        .iter()
-        {
+        for btn in Button::iterator() {
             if self.is_pressed(*btn) {
                 return true;
             }
@@ -341,27 +344,7 @@ impl Controller {
 
     #[allow(dead_code)]
     fn debug_print(&self) {
-        for btn in [
-            Button::PS,
-            Button::Start,
-            Button::Select,
-            Button::Up,
-            Button::Down,
-            Button::Left,
-            Button::Right,
-            Button::L1,
-            Button::L2,
-            Button::L3,
-            Button::R1,
-            Button::R2,
-            Button::R3,
-            Button::Triangle,
-            Button::Circle,
-            Button::Cross,
-            Button::Square,
-        ]
-        .iter()
-        {
+        for btn in Button::iterator() {
             if self.was_pressed(*btn) {
                 debug!("{:?} pressed.", btn);
             }

@@ -39,7 +39,7 @@ pub trait ControllerHandler {
     fn on_event(&mut self, e: HidEvent);
 
     /// Default implementation that calls on_event to process changed/active controller states.
-    fn controller_update(&mut self, controller: &Controller) {
+    fn controller_update_default(&mut self, controller: &Controller) {
         let l_stk = self.min_len_stick();
         let l_tgr = self.min_len_trigger();
 
@@ -105,6 +105,13 @@ pub trait ControllerHandler {
                 );
             }
         }
+    }
+
+    /// Can be overridden if direct control over the raw hid input is desired
+    /// (in this case, give a void implementation on on_event).
+    /// For simple applications, implementing on_event may be easier.
+    fn controller_update(&mut self, controller: &Controller) {
+        self.controller_update_default(controller);
     }
 }
 
